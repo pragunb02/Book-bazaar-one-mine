@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkout Page</title>
+    <script src="https://smtpjs.com/v3/smtp.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.7/axios.min.js"
+      integrity="sha512-NQfB/bDaB8kaSXF8E77JjhHG5PM6XVRxvHzkZiwl3ddWCEPBa23T76MuWSwAJdMGJnmQqM0VeY9kFszsrBEFrQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+      }
+
+      h1 {
+        text-align: center;
+        color: #333;
+        margin-top: 50px;
+      }
+
+      .address-form {
+        max-width: 400px;
+        margin: 50px auto;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+        padding: 20px;
+      }
+
+      .address-form label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+      }
+
+      .address-form input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        box-sizing: border-box;
+      }
+
+      .address-form button {
+        width: 100%;
+        padding: 10px;
+        background-color: #3498db;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
+    <!-- <script src="https://checkout.razorpay.com/v1/checkout.js"></script> -->
+  </head>
+
+  <body>
+    <h1>Checkout Page</h1>
+    <div class="address-form">
+      <h2>Enter Your Address</h2>
+      <form>
+        <label for="address">Address:</label>
+        <input type="text" id="address" name="address" required />
+
+        <label for="city">City:</label>
+        <input type="text" id="city" name="city" required />
+
+        <label for="zipcode">Zip Code:</label>
+        <input type="text" id="zipcode" name="zipcode" required />
+
+        <button id="checkout-button">Complete Purchase</button>
+      </form>
+    </div>
+
+    <script>
+      console.log("oooo2");
+      function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        // console.log("URL:", url); // Debugging: Log the URL
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+          results = regex.exec(url);
+        // console.log("Results:", results); // Debugging: Log the results
+        if (!results) return null;
+        if (!results[2]) return "";
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+      }
+
+      console.log("oooo1");
+
+      var title = getParameterByName("title");
+      var price = getParameterByName("price");
+      var image = getParameterByName("image");
+      var Ownermail = getParameterByName("mail");
+      console.log("oooo");
+      console.log(Ownermail);
+      // var mail='rahulrka9@gmail.com';
+
+      var razorpay = new Razorpay({
+        key: "rzp_test_paJFn0saN0ICxG",
+        amount: price * 100,
+        name: title,
+        description: "Purchase Description",
+        image: image,
+        handler: async function (response) {
+          const address = document.getElementById("address").value;
+          const city = document.getElementById("city").value;
+          const zipcode = document.getElementById("zipcode").value;
+          const res = await axios.get("/get-user");
+          console.log("HIIIIIIIIIII");
+          console.log(res.data);
+          const CustomerEmail = res.data.user.email;
+          console.log(CustomerEmail);
+          const data = {
+            email: CustomerEmail,
+            address: `${address}, ${city}, ${zipcode}`,
+          };
+
+          fetch("/auth/payment-success", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log(data);
+              alert("Email sent successfully!"); // Assuming the email sending is successful
+              // window.location.href = "/";
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("Failed to send request. Please try again later.");
+            });
+        },
+        prefill: {
+          name: "Customer Name",
+          email: "customer@example.com",
+        },
+        notes: {
+          address: "Customer Address",
+        },
+        theme: {
+          color: "#3498db",
+        },
+      });
+
+      document.getElementById("checkout-button").onclick = function (e) {
+        razorpay.open();
+        e.preventDefault();
+      };
+    </script>
+  </body>
+</html>
